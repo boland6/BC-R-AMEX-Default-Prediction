@@ -4,7 +4,7 @@
 .Ruserdata
 
 [user]
-  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINAfeIo0dPay6iGAhloAM/GZ1sFBrir5bBLZlCCfzKci
+  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHj1Lb/YvXCd8FRhreQ8iTUmZ11ETegmfGbOBvsIFoJ9
 
 [gpg]
   format = ssh
