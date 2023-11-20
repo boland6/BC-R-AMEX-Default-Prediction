@@ -7,9 +7,14 @@ library(dplyr)
 library(ggformula)
 library(fastDummies)
 library(caret)
-
+library(data.table)
 
 #Ingesting data from AMEX
-df < -read.csv("train_data.csv")
+  #This contains the labels for the training data for the entire data set
 df_labels <- read.csv("train_labels.csv")
+
+
+
+
+
 
