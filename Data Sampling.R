@@ -10,8 +10,9 @@ library(caret)
 library(data.table)
 
 #Ingesting data from AMEX
-  #This contains the labels for the training data for the entire dataset
+  #This contains the labels for the training data for the entire data set
 df_labels <- read.csv("train_labels.csv")
+
 
 
 
