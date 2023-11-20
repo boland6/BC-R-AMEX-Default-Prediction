@@ -11,3 +11,5 @@ library(caret)
 
 #Ingesting data from AMEX
 df < -read.csv("train_data.csv")
+df_labels <- read.csv("train_labels.csv")
+
