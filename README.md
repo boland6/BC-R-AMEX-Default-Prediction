@@ -18,6 +18,9 @@ R language
 R packages
   -dplyr
 
+**Files**
+train_data.csv - training data with multiple statement dates per customer_ID
+train_labels.csv - target label for each customer_ID
 
 **Model Overview**
 A detailed description of the predictive model(s) used, including any specific algorithms or techniques.
