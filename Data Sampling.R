@@ -132,6 +132,12 @@ summary(allmodel)
 Regstep <- step(nullmodel, scope = formula(allmodel))
 summary(Regstep)
 
+# Capture the output of the summary
+reg_output <- capture.output(Regstep)
+
+# Write the output to a text file
+writeLines(reg_output, "regression_model_summary.txt")
+
 
 
 #########Get Predictions######
