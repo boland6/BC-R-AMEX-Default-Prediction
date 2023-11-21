@@ -8,14 +8,24 @@ library(ggformula)
 library(fastDummies)
 library(caret)
 library(data.table)
+library(mosaic) # #Functions for common statistical tasks.
 
-#Ingesting data from AMEX
-  #This contains the labels for the training data for the entire data set
-df <- read.csv("train.csv")
+
+#DATA PREPROCESSING
+#Load the master data file.
+
+        #Ingesting data from AMEX
+          #This contains the labels for the training data for the entire data set
+        df <- read.csv("train.csv")
 
 # List all columns and features of the dataframe
 column_names <- colnames(df)
 print(column_names)
+
+
+
+
+
 
 ############################################################################################
 #######################Data Check###########################################################
@@ -28,6 +38,12 @@ sum(duplicated(df))
 
 ############################################################################################
 #######################Data CLeanup###########################################################
+
+
+
+
+
+
 #Examine categorical columns
 
 cate_columns <- c('B_30', 'B_38', 'D_114', 'D_116', 'D_117', 'D_120', 'D_126', 'D_63', 'D_64', 'D_66', 'D_68')
@@ -140,14 +156,39 @@ writeLines(reg_output, "regression_model_summary.txt")
 
 
 
-#########Get Predictions######
+################################################################################################
+################################################################################################
+########################////////Evaluate Fit of the stepwise model ////////##########################################
+################################################################################################
+################################################################################################
 
-#Get predictions against training data using created model
-pred_Regstep_train <- predict(Regstep, df_train)
-#Get predictions against testing data using created model
-pred_Regstep_test <- predict(Regstep, df_test)
+#Testing Stepwise Model against training data
+regstep_training_test<-predict(Regstep, df_train, type = c("response")) %>%
+  round()
+
+regstep_training_test_muta<-mutate(df_train, Predict=regstep_training_test)
+
+
+mean_accuracy_train_step_pred<-mean(~(Default == Predict), data = regstep_training_test_muta)
+
+
+tally(Default ~ Predict, data = regstep_training_test_muta) %>% addmargins()
+
+tally(Default ~ Predict, data = regstep_training_test_muta) %>% prop.table(margin=1) %>% round(3)
 
 
 
+#Testing Stepwise Model against training data
+regstep_test_test<-predict(regstep, stardat_test, type = c("response")) %>%
+  round()
 
+regstep_test_test_muta<-mutate(stardat_test, Predict=regstep_test_test)
+
+
+mean_accuracy_test_step_pred<-mean(~(Default == Predict), data = regstep_test_test_muta)
+
+
+tally(Default ~ Predict, data = regstep_test_test_muta) %>% addmargins()
+
+tally(Default ~ Predict, data = regstep_test_test_muta) %>% prop.table(margin=1) %>% round(3)
 
