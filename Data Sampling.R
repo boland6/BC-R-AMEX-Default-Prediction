@@ -26,19 +26,51 @@ sum(is.na(df))
 #Check for duplicates
 sum(duplicated(df))
 
-
-
-
-
-
-
-
-
-
-
+############################################################################################
+#######################Data CLeanup###########################################################
 #Examine categorical columns
 
 cate_columns <- c('B_30', 'B_38', 'D_114', 'D_116', 'D_117', 'D_120', 'D_126', 'D_63', 'D_64', 'D_66', 'D_68')
+pk_column <- c('customer_ID')
+
+# Function to calculate the mode (most frequent value)
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+# Impute missing values
+for (col in names(df)) {
+  # Skip the primary key column
+  if (col == pk_column) {
+    next
+  }
+  
+  # Check if column is numeric
+  if (is.numeric(df[[col]])) {
+    # Replace NA with the mean
+    mean_value <- mean(df[[col]], na.rm = TRUE)
+    df[[col]][is.na(df[[col]])] <- mean_value
+  } 
+  # Impute categorical columns
+  else if (col %in% cate_columns) {
+    # Replace NA with the mode or a separate category
+    mode_value <- getmode(df[[col]][!is.na(df[[col]])])
+    if (is.na(mode_value)) { mode_value <- 'Missing' }  # In case the mode is NA
+    df[[col]][is.na(df[[col]])] <- mode_value
+  }
+  # If not numeric or categorical, potentially do something else or nothing
+  else {
+    #handle other types of data or skip
+  }
+}
+
+
+############################################################################################
+############################################################################################
+############################################################################################
+
+
 
 #Create dummy variable for categorical data
 
