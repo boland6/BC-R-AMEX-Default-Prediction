@@ -96,5 +96,20 @@ summary(allmodel)
 
 
 
+#Calculate the stepwise equation (Create Model)
+Regstep <- step(nullmodel, scope = formula(allmodel))
+summary(Regstep)
+
+
+
+#########Get Predictions######
+
+#Get predictions against training data using created model
+pred_Regstep_train <- predict(Regstep, df_train)
+#Get predictions against testing data using created model
+pred_Regstep_test <- predict(Regstep, df_test)
+
+
+
 
 
