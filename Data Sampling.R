@@ -1,6 +1,9 @@
 #Setting working directory
 setwd("~/BC-R-AMEX-Default-Prediction")
 
+
+############################################################################################
+#######################Libraries###########################################################
 #Packages and libraries
 library(haven)
 library(dplyr)
@@ -10,25 +13,24 @@ library(caret)
 library(data.table)
 library(mosaic) # #Functions for common statistical tasks.
 
+############################################################################################
 
-#DATA PREPROCESSING
+
+############################################################################################
+#######################Data Loading###########################################################
 #Load the master data file.
+#Ingesting data from AMEX
+#This contains the labels for the training data for the entire data set
+df <- read.csv("train.csv")
+############################################################################################
 
-        #Ingesting data from AMEX
-          #This contains the labels for the training data for the entire data set
-        df <- read.csv("train.csv")
+
+############################################################################################
+#######################DATA PROFILING###################################################
 
 # List all columns and features of the dataframe
 column_names <- colnames(df)
 print(column_names)
-
-
-
-
-
-
-############################################################################################
-#######################Data Check###########################################################
 
 #Check for NAs
 sum(is.na(df))
@@ -36,13 +38,10 @@ sum(is.na(df))
 #Check for duplicates
 sum(duplicated(df))
 
+
+
 ############################################################################################
-#######################Data CLeanup###########################################################
-
-
-
-
-
+#######################DATA PREPROCESSING###################################################
 
 #Examine categorical columns
 
