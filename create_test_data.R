@@ -11,6 +11,7 @@ setwd("~/BC-R-AMEX-Default-Prediction")
 ###########################################Load Packages###########################################################
 
 library(data.table)
+library(dplyr)
 
 
 ###########################################Defining File Path######################################################
@@ -30,7 +31,7 @@ testing_dataSize <- 1750
 # Set a random seed for reproducibility
 set.seed(23)
 
-###########################################Create Training Data From Large Dataset################################
+###########################################Create Testing Data From Large Dataset################################
 
 # Read the file as a data.table
 large_train_data <- fread(large_train_data_path)
@@ -47,6 +48,21 @@ selected_test_data <- large_train_data[sample_indices, ]
 #read column of selected test data
 names(selected_test_data)
 
+##################################Load Labels for outcomes #########################################
 
-###########################################################################
+#Read int the labels CSV
+large_train_labels <- read.csv(large_train_labels_path)
+
+#Perform lookup and left_join to pull in the 'target' outcome for the created test data
+selected_test_data_2 <- selected_test_data %>%
+  left_join(large_train_labels, by = "customer_ID")
+
+#read column of updated test data
+names(selected_test_data_2)
+
+###################################Write the test_data to a CSV file#################################
+
+# Write the dataframe to a CSV file, including column names
+write.csv(selected_test_data_2, "test.csv",row.names = FALSE)
+
 
