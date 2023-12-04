@@ -101,7 +101,9 @@ df[order(customer_ID, S_2), n_num_obs := seq_len(.N), by = customer_ID]
         
         
 ########################################################################################################
-#################################Filter dataset to only latest####################################################
-
+################Filter dataset to only latest occurrence of each customer#####################################
+        
+        # Filter to get the latest observation for each customer
+        latest_data <- df_2[,.SD[which.max(n_num_obs)], by = customer_ID]
         
   
