@@ -4,7 +4,6 @@ library(data.table)
 library(ggplot2)
 library(dplyr)
 
-
 ########################################################################################################
 #################################Functions##############################################################
 
@@ -104,6 +103,35 @@ getMode <- function(v) {
 # Function to calculate the mean
 getMean <- function(v) {
   mean(na.omit(v))
+}
+
+#function to analyze the distribution of a specific column in a dataframe
+analyze_target_variable <- function(data, column_name) {
+  # Check the structure of the data frame
+  str(data)
+  
+  # Summary statistics of the specified column
+  summary(data[[column_name]])
+  
+  # Frequency table of the specified column
+  table(data[[column_name]])
+  
+  # Create a histogram to visualize the distribution of the specified column
+  ggplot(data = data, aes(x = data[[column_name]])) +
+    geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+    labs(title = paste("Histogram of", column_name, "Variable"),
+         x = column_name, y = "Frequency")
+  
+  # Create a boxplot to visualize the spread of the specified column
+  ggplot(data = data, aes(y = data[[column_name]])) +
+    geom_boxplot(fill = "green", color = "black") +
+    labs(title = paste("Boxplot of", column_name, "Variable"), y = column_name)
+  
+  # Create a density plot to visualize the distribution of the specified column
+  ggplot(data = data, aes(x = data[[column_name]])) +
+    geom_density(fill = "purple", color = "black") +
+    labs(title = paste("Density Plot of", column_name, "Variable"),
+         x = column_name, y = "Density")
 }
 
 ########################################################################################################
@@ -247,5 +275,8 @@ df[order(customer_ID, S_2), n_num_obs := seq_len(.N), by = customer_ID]
 
 
 ########################################################################################################
-#################################Examining NA Values####################################################     
+#################################Drop Date Column and Duplicate column####################################################     
           
+        latest_data_2 <- latest_data %>% select(-n_num_obs, -S_2)
+        
+        analyze_target_variable(latest_data_2,"target")
