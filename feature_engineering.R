@@ -353,4 +353,34 @@ df[order(customer_ID, S_2), n_num_obs := seq_len(.N), by = customer_ID]
 
         
 ########################################################################################################
-#################################sub_sample the large data to 10000##########################  
+#################################Partitioning the variables to training and test##########################
+        
+        # Calculate the number of rows that will be in the training set
+        training_size <- floor(0.80 * nrow(sampled_data))
+        
+        # Randomly sample row indices for the training set
+        training_indices <- sample(seq_len(nrow(sampled_data)), size = training_size)
+        
+        # Create a new column 'partition' and assign 'train' or 'test'
+        sampled_data_2 <- sampled_data %>%
+          mutate(partition = if_else(row_number() %in% training_indices, 'train', 'test'))
+        
+        # View the first few rows of the modified DataFrame
+        head(sampled_data_2)
+        
+        
+        
+        #partition into training and test
+        df_train <-filter(sampled_data_2,partition == "train") %>% select (-'partition')
+        df_test <-filter(sampled_data_2,partition == "test") %>% select (-'partition')
+
+########################################################################################################
+#################################Write the partitioned data into csv##########################
+        
+        #Write test data
+        write.csv(df_test, "test.csv",row.names = FALSE)
+        
+        #Write training data
+        write.csv(df_train, "train.csv",row.names = FALSE)
+        
+        
