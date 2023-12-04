@@ -3,6 +3,7 @@
 library(data.table)
 library(ggplot2)
 library(dplyr)
+library(fastDummies)
 
 ########################################################################################################
 #################################Functions##############################################################
@@ -114,24 +115,46 @@ analyze_target_variable <- function(data, column_name) {
   summary(data[[column_name]])
   
   # Frequency table of the specified column
-  table(data[[column_name]])
+  freq_table <- table(data[[column_name]])
   
-  # Create a histogram to visualize the distribution of the specified column
-  ggplot(data = data, aes(x = data[[column_name]])) +
-    geom_histogram(binwidth = 1, fill = "blue", color = "black") +
-    labs(title = paste("Histogram of", column_name, "Variable"),
-         x = column_name, y = "Frequency")
+  tryCatch(
+    {
+      # Create a histogram to visualize the distribution of the specified column
+      hist_plot <- ggplot(data = data, aes(x = data[[column_name]])) +
+        geom_histogram(binwidth = 1, fill = "blue", color = "black") +
+        labs(title = paste("Histogram of", column_name, "Variable"),
+             x = column_name, y = "Frequency")
+      
+      # Create a boxplot to visualize the spread of the specified column
+      box_plot <- ggplot(data = data, aes(y = data[[column_name]])) +
+        geom_boxplot(fill = "green", color = "black") +
+        labs(title = paste("Boxplot of", column_name, "Variable"), y = column_name)
+      
+      # Create a density plot to visualize the distribution of the specified column
+      density_plot <- ggplot(data = data, aes(x = data[[column_name]])) +
+        geom_density(fill = "purple", color = "black") +
+        labs(title = paste("Density Plot of", column_name, "Variable"),
+             x = column_name, y = "Density")
+      
+      # Create a pie chart to visualize the distribution of the specified column
+      pie_chart <- ggplot(data = data, aes(x = factor(1), fill = factor(data[[column_name]]))) +
+        geom_bar() +
+        coord_polar(theta = "y") +
+        labs(title = paste("Pie Chart of", column_name, "Variable"))
+      
+      # Print all the plots
+      print(hist_plot)
+      print(box_plot)
+      print(density_plot)
+      print(pie_chart)
+    },
+    error = function(e) {
+      cat("An error occurred while plotting:", conditionMessage(e), "\n")
+    }
+  )
   
-  # Create a boxplot to visualize the spread of the specified column
-  ggplot(data = data, aes(y = data[[column_name]])) +
-    geom_boxplot(fill = "green", color = "black") +
-    labs(title = paste("Boxplot of", column_name, "Variable"), y = column_name)
-  
-  # Create a density plot to visualize the distribution of the specified column
-  ggplot(data = data, aes(x = data[[column_name]])) +
-    geom_density(fill = "purple", color = "black") +
-    labs(title = paste("Density Plot of", column_name, "Variable"),
-         x = column_name, y = "Density")
+  # Return the frequency table
+  return(freq_table)
 }
 
 ########################################################################################################
@@ -276,7 +299,58 @@ df[order(customer_ID, S_2), n_num_obs := seq_len(.N), by = customer_ID]
 
 ########################################################################################################
 #################################Drop Date Column and Duplicate column####################################################     
-          
+          #n_num_obs should match number of obs since we only selected the last record of the customer
         latest_data_2 <- latest_data %>% select(-n_num_obs, -S_2)
         
+        #analyst the distribution of target in the updated df
         analyze_target_variable(latest_data_2,"target")
+
+########################################################################################################
+#################################Create dummy columns for categorical variable####################################################     
+        
+        #Recalculate column stats to obtain latest info
+        column_stats_latest <- calculate_NA_stats(latest_data_2)
+        #calculate rows that is non-number based on the value inside the columns
+        nonnumber_rownames <- rownames(column_stats_latest[column_stats_latest$Column_Type == "Non-Number" & rownames(column_stats_latest) != "customer_ID", ])
+        print(nonnumber_rownames)
+        
+        #Look at the unique values inside those columns to verify
+        for (col_name in nonnumber_rownames) {
+          # Check if the column name exists in latest_data_2
+          if (col_name %in% names(latest_data_2)) {
+            # Extract unique values from the column in latest_data_2
+            unique_values <- unique(latest_data_2[[col_name]])
+            
+            # Print the column name and its unique values
+            cat("Unique values in column", col_name, ":\n")
+            print(unique_values)
+            cat("\n") # Just for better readability
+          } else {
+            cat("Column", col_name, "does not exist in latest_data_2\n")
+          }
+        }
+
+        #Create dummy variables
+        latest_data_2_dummies <- dummy_cols(latest_data_2, 
+                                            select_columns = nonnumber_rownames, 
+                                            remove_first_dummy = TRUE, 
+                                            remove_selected_columns = TRUE)
+
+        #verify        
+        #Recalculate column stats to obtain latest info
+        column_stats_latest_dummy <- calculate_NA_stats(latest_data_2_dummies)
+        
+########################################################################################################
+#################################sub_sample the large data to 10000##########################
+        # Set the seed for reproducibility
+        set.seed(23)
+        
+        sampling_size <- 10000
+        
+        # Assuming latest_data_2_dummies is a data frame
+        # Randomly select 10000 rows from the dataframe
+        sampled_data <- latest_data_2_dummies[sample(nrow(latest_data_2_dummies), sampling_size), ]
+
+        
+########################################################################################################
+#################################sub_sample the large data to 10000##########################  
