@@ -19,10 +19,42 @@ calculate_NA_stats <- function(data) {
   stats$Percent_NA <- round((stats$Num_NA / total_rows) * 100,4)
   
   # Set column type
-  stats$Column_Type <- ifelse(names(data) %in% cate_columns, 'Categorical',
-                              ifelse(names(data) %in% date_columns, 'Date',
-                                     ifelse(names(data) %in% id_column, 'ID',
-                                            ifelse(names(data) %in% outcome_column, 'Outcome', 'Other'))))
+  stats$Column_Type <- sapply(names(data), function(column_name) {
+    column <- data[[column_name]]
+    
+    # Check if the column contains only NA values
+    if (all(is.na(column))) {
+      return("Only NA")
+    }
+    # Check if the column contains non-numbers
+    else if (any(!is.na(column) & !is.numeric(column))) {
+      return("Non-Number")
+    }
+    # Check if all non-NA values are whole numbers under 40
+    else if (all(column[!is.na(column)] == floor(column[!is.na(column)])) && all(column[!is.na(column)] < 40)) {
+      return("Whole Number (Categorization)")
+    }
+    # Check if the column contains numbers with decimals
+    else if (any(column[!is.na(column)] != floor(column[!is.na(column)]))) {
+      return("Numerical")
+    }
+    # Existing conditions for categorical, date, ID, outcome, or other
+    else if (column_name %in% cate_columns) {
+      return("AMEX Defined Categorical")
+    }
+    else if (column_name %in% date_columns) {
+      return("Date")
+    }
+    else if (column_name %in% id_column) {
+      return("ID")
+    }
+    else if (column_name %in% outcome_column) {
+      return("Outcome")
+    }
+    else {
+      return("Other")
+    }
+  })
   
   # Set row names as column names from the original data
   row.names(stats) <- names(data)
@@ -30,8 +62,48 @@ calculate_NA_stats <- function(data) {
   return(stats)
 }
 
+#Functions to categorize columns based on conditions
+categorize_columns <- function(dataframe) {
+  result <- vector("list", length = ncol(dataframe))
+  names(result) <- names(dataframe)
+  
+  for (i in seq_along(dataframe)) {
+    column <- dataframe[[i]]
+    column_name <- names(dataframe)[i]
+    
+    # Check if the column contains only NA values
+    if (all(is.na(column))) {
+      result[[i]] <- paste("Only NA")
+    }
+    # Check if the column contains non-numbers
+    else if (any(!is.na(column) & !is.numeric(column))) {
+      result[[i]] <- paste("Non-Number")
+    }
+    # Check if all non-NA values are whole numbers under 40
+    else if (all(column[!is.na(column)] == floor(column[!is.na(column)])) && all(column[!is.na(column)] < 40)) {
+      result[[i]] <- paste("Whole Number (Categorization)")
+    }
+    # Check if the column contains numbers with decimals
+    else if (any(column[!is.na(column)] != floor(column[!is.na(column)]))) {
+      result[[i]] <- paste("Numerical")
+    }
+    else {
+      result[[i]] <- paste("does not match any category")
+    }
+  }
+  
+  return(result)
+}
+
+# Function to calculate the mode
+get_mode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
 ########################################################################################################
 #################################Assign Column Type#####################################################
+
 cate_columns <- c('B_30', 'B_38', 'D_114', 'D_116', 'D_117', 'D_120', 'D_126', 'D_63', 'D_64', 'D_66', 'D_68')
 date_columns <- c('S_2')
 id_column <- c('customer_ID')
@@ -106,4 +178,21 @@ df[order(customer_ID, S_2), n_num_obs := seq_len(.N), by = customer_ID]
         # Filter to get the latest observation for each customer
         latest_data <- df_2[,.SD[which.max(n_num_obs)], by = customer_ID]
         
+        
+        # Calculate stats to examine na values
+        column_stats_latest <- calculate_NA_stats(latest_data)
+        
+        
+        #Categorize column using function based on data contained in the column on the latest data
+        column_categorizations <- categorize_columns(latest_data)
+        
+        
+########################################################################################################    
+################NA Value Engineering####################################################################   
+        latest_data$D_87[is.na(latest_data$D_87)] <- 0
+        latest_data$D_66[is.na(latest_data$D_66)] <- 0
+        latest_data$D_68[is.na(latest_data$D_68)] <- 0
+        
+        
+
   
