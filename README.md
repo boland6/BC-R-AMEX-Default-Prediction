@@ -37,4 +37,19 @@ BZAN8067.01 Fall 2023 Machine Learning for Business Intelligence (Prof. VanderWe
     -Zishu Yuan
     -Patrick Boland
 
+# Deriving Training Data
+Training data (train.csv) is provided by AMEX on Kaggle, and derived from https://www.kaggle.com/competitions/amex-default-prediction/data
+
+However, the data contain about 190 features with 458K unique customer values. This will entail significant processing time for training models. In the interest of efficiency, we selected a subset of the training data. 
+
+There is a a fork of the Kaggle project, American Express - Default Prediction (small), that contains a smaller subset of the data (Note: This Kaggle project page is in Korean) -
+https://www.kaggle.com/competitions/amex-default-prediction-small
+
+This subset contains 7000 obs from the original training data. Separately, the outcome have been joined into the training data by the forking author.
+
+
+
+
+    
+
 
