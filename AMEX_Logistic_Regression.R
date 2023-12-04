@@ -21,98 +21,11 @@ library(mosaic) # #Functions for common statistical tasks.
 #Load the master data file.
 #Ingesting data from AMEX
 #This contains the labels for the training data for the entire data set
-d_AMEX_train <-
-d_AMEX_test <-
+d_AMEX_train <- read.csv("train.csv") %>% select(-customer_ID)
+d_AMEX_test <-read.csv("test.csv") %>% select(-customer_ID)
 ############################################################################################
+########################////////Remove ID////////##########################################
 
-
-############################################################################################
-#######################DATA PROFILING###################################################
-
-# List all columns and features of the dataframe
-column_names <- colnames(df)
-print(column_names)
-
-#Check for NAs
-sum(is.na(df))
-
-#Check for duplicates
-sum(duplicated(df))
-
-
-############################################################################################
-#######################DATA PREPROCESSING###################################################
-
-#Examine categorical columns
-
-cate_columns <- c('B_30', 'B_38', 'D_114', 'D_116', 'D_117', 'D_120', 'D_126', 'D_63', 'D_64', 'D_66', 'D_68')
-date_column <- c('S_2')
-id_column <- c('customer_ID','target')
-
-# Creating a getmode function that takes the unique tabulated mode for the values in the
-# column in question
-getmode <- function(v) {
-  uniqv <- unique(v)
-  uniqv[which.max(tabulate(match(v, uniqv)))]
-}
-
-#Loop for each column in the df
-for (col in names(df)) {
-  
-  # Skip the primary key column
-  if (col %in% id_column) {
-    next
-  }
-  
-  # Check if column is numeric
-  if (col %in% cate_columns) {
-    # Replace NA with the mode or a separate category
-    mode_value <- getmode(df[[col]][!is.na(df[[col]])])
-    if (is.na(mode_value)) { mode_value <- 'Missing' }  # In case the mode is NA
-    df[[col]][is.na(df[[col]])] <- mode_value
-  }
-}
-
-
-############################################################################################
-############################################################################################
-############################################################################################
-
-
-
-#Create dummy variable for categorical data
-
-#Create dummy variable (also removes ID variable)
-df_2 <-dummy_cols(df, select_columns = cate_columns, 
-                          remove_first_dummy = TRUE, 
-                          remove_selected_columns = TRUE) %>% select (-'customer_ID')
-
-
-#Partitioning the variables
-#partition <- sample(c("train","test"), size = nrow(df_2), replace = TRUE, prob = c(0.8,0.2))
-#df_3 <- mutate(df_2, partition)
-
-set.seed(23) # for reproducibility
-
-# Calculate the number of rows that will be in the training set
-training_size <- floor(0.80 * nrow(df_2))
-
-# Randomly sample row indices for the training set
-training_indices <- sample(seq_len(nrow(df_2)), size = training_size)
-
-# Create a new column 'partition' and assign 'train' or 'test'
-df_3 <- df_2 %>%
-  mutate(partition = if_else(row_number() %in% training_indices, 'train', 'test'))
-
-# View the first few rows of the modified DataFrame
-head(df_3)
-
-
-#Create data frame for training and test data from partitioned data
-
-#Divide by partitions
-df_train <-filter(df_3,partition == "train") %>% select (-'partition')
-df_test <-filter(df_3,partition == "test") %>% select (-'partition')
 
 
 ################################################################################################
@@ -124,63 +37,16 @@ df_test <-filter(df_3,partition == "test") %>% select (-'partition')
 
 
 #####AUTOMATED MODEL TRAINING AND TUNING#####
-#Run a stepwise regression
+#Build a stepwise logistic regression model
+#Make a model with no independent variables.
+ml_lognull <- glm(target ~ 1, data=d_AMEX_train, family=binomial) #base R
 
-#Create model with no independent variables
-nullmodel <- glm(target ~ 1, data = df_train)
-summary(nullmodel)
+#Make a model with all available independent variables.
+ml_logall <- glm(target ~., data=d_AMEX_train, family=binomial) #base R
 
-#Create model with all the independent variables
-allmodel <- glm(target ~., data = df_train)
-summary(allmodel)
+#Create a model using the stepwise procedure.
+ml_logstep <- step(ml_lognull, scope=formula(ml_logall)) #base R
 
-
-
-#Calculate the stepwise equation (Create Model)
-Regstep <- step(nullmodel, scope = formula(allmodel))
-summary(Regstep)
-
-# Capture the output of the summary
-reg_output <- capture.output(Regstep)
-
-# Write the output to a text file
-writeLines(reg_output, "regression_model_summary.txt")
-
-
-
-################################################################################################
-################################################################################################
-########################////////Evaluate Fit of the stepwise model ////////##########################################
-################################################################################################
-################################################################################################
-
-#Testing Stepwise Model against training data
-regstep_training_test<-predict(Regstep, df_train, type = c("response")) %>%
-  round()
-
-regstep_training_test_muta<-mutate(df_train, Predict=regstep_training_test)
-
-
-mean_accuracy_train_step_pred<-mean(~(Default == Predict), data = regstep_training_test_muta)
-
-
-tally(Default ~ Predict, data = regstep_training_test_muta) %>% addmargins()
-
-tally(Default ~ Predict, data = regstep_training_test_muta) %>% prop.table(margin=1) %>% round(3)
-
-
-
-#Testing Stepwise Model against training data
-regstep_test_test<-predict(regstep, stardat_test, type = c("response")) %>%
-  round()
-
-regstep_test_test_muta<-mutate(stardat_test, Predict=regstep_test_test)
-
-
-mean_accuracy_test_step_pred<-mean(~(Default == Predict), data = regstep_test_test_muta)
-
-
-tally(Default ~ Predict, data = regstep_test_test_muta) %>% addmargins()
-
-tally(Default ~ Predict, data = regstep_test_test_muta) %>% prop.table(margin=1) %>% round(3)
+#Display the main results.  
+summary(ml_logstep) #base R
 
