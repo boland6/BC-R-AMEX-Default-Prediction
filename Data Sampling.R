@@ -45,6 +45,7 @@ sum(duplicated(df))
 #Examine categorical columns
 
 cate_columns <- c('B_30', 'B_38', 'D_114', 'D_116', 'D_117', 'D_120', 'D_126', 'D_63', 'D_64', 'D_66', 'D_68')
+date_column <- c('S_2')
 id_column <- c('customer_ID','target')
 
 # Creating a getmode function that takes the unique tabulated mode for the values in the
