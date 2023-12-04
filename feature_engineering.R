@@ -96,9 +96,14 @@ categorize_columns <- function(dataframe) {
 }
 
 # Function to calculate the mode
-get_mode <- function(v) {
+getMode <- function(v) {
   uniqv <- unique(v)
   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+# Function to calculate the mean
+getMean <- function(v) {
+  mean(na.omit(v))
 }
 
 ########################################################################################################
@@ -175,12 +180,13 @@ df[order(customer_ID, S_2), n_num_obs := seq_len(.N), by = customer_ID]
 ########################################################################################################
 ################Filter dataset to only latest occurrence of each customer#####################################
         
-        # Filter to get the latest observation for each customer
+        # Filter to get the latest observation for each customer (for the best data for each customer)
         latest_data <- df_2[,.SD[which.max(n_num_obs)], by = customer_ID]
         
         
         # Calculate stats to examine na values
         column_stats_latest <- calculate_NA_stats(latest_data)
+        
         
         
         #Categorize column using function based on data contained in the column on the latest data
@@ -189,10 +195,57 @@ df[order(customer_ID, S_2), n_num_obs := seq_len(.N), by = customer_ID]
         
 ########################################################################################################    
 ################NA Value Engineering####################################################################   
+        
+        #Assigning the following to 0 because the variable in the dataset appears to be whole number
+        #potential categorical
+        #and 0 is not a existing variable in the column
+        #so this allows for capturing NA as a dimension in the model
         latest_data$D_87[is.na(latest_data$D_87)] <- 0
         latest_data$D_66[is.na(latest_data$D_66)] <- 0
         latest_data$D_68[is.na(latest_data$D_68)] <- 0
+        latest_data$D_117[is.na(latest_data$D_117)] <- 0
+        latest_data$B_38[is.na(latest_data$B_38)] <- 0
         
+        #examine the na values after the above functions
+        # Calculate stats to examine na values
+        column_stats_latest <- calculate_NA_stats(latest_data)
         
+        # Identifying rows
+        halfNAMissing_Column <- rownames(column_stats_latest[column_stats_latest$Percent_NA > 50, ])
+        wholenumber_Column <- rownames(column_stats_latest[column_stats_latest$Column_Type == "Whole Number (Categorization)", ])
 
-  
+        # Replace NA with 0 in columns specified by halfNAMissing_Column in latest_data
+        for(col in halfNAMissing_Column) {
+          if(col %in% colnames(latest_data)) {
+            latest_data[[col]][is.na(latest_data[[col]])] <- 0
+          }
+        }
+        
+        # Replace NA with the mode in columns of wholenumber_Column in latest_data
+        for(col in wholenumber_Column) {
+          if(col %in% colnames(latest_data)) {
+            mode_value <- getMode(latest_data[[col]])
+            latest_data[[col]][is.na(latest_data[[col]])] <- mode_value
+          }
+        }
+        
+        # Calculate stats to examine na values
+        column_stats_latest <- calculate_NA_stats(latest_data)
+        
+        #Numerical columns 
+        numerical_NA_rownames <- rownames(column_stats_latest[column_stats_latest$Column_Type == "Numerical" & column_stats_latest$Percent_NA > 0, ])
+        
+        for(col in numerical_NA_rownames) {
+          if(col %in% colnames(latest_data)) {
+            mean_value <- getMean(latest_data[[col]])
+            latest_data[[col]][is.na(latest_data[[col]])] <- mean_value
+          }
+        }
+        
+        # Calculate stats to examine na values
+        column_stats_latest <- calculate_NA_stats(latest_data)
+
+
+########################################################################################################
+#################################Examining NA Values####################################################     
+          
