@@ -37,7 +37,7 @@ BZAN8067.01 Fall 2023 Machine Learning for Business Intelligence (Prof. VanderWe
     -Zishu Yuan
     -Patrick Boland
 
-# Deriving Training Data
+# Training Data Creation
 Training data (train.csv) is provided by AMEX on Kaggle, and derived from https://www.kaggle.com/competitions/amex-default-prediction/data
 
 However, the data contain about 190 features with 458K unique customer values. This will entail significant processing time for training models. In the interest of efficiency, we selected a subset of the training data. 
@@ -46,6 +46,39 @@ There is a a fork of the Kaggle project, American Express - Default Prediction (
 https://www.kaggle.com/competitions/amex-default-prediction-small
 
 This subset contains 7000 obs from the original training data. Separately, the outcome have been joined into the training data by the forking author.
+
+# Test Data Creation - create_test_data.R
+
+*Script - create_test_data.R*
+
+**Script Purpose**
+
+The script's primary objective is to generate a test dataset from an existing, larger training dataset. This smaller dataset is intended for testing and validation purposes in the context of predicting American Express defaults. This allows us to utilize the same testing dataframe for consistency.
+
+**Libraries**
+
+The script uses data.table and dplyr libraries.
+
+**Key Variables**
+
+
+* **Test Data Size**: A specific size for the test dataset is set (1750 rows), targeting an 80-20 train-test split ratio. This size is chosen to provide a substantial yet manageable subset of the original dataset for testing purposes.
+
+* **Random Seed**: A random seed of 23 is set to ensure reproducibility. This means that the random selection of data rows will be consistent across different script executions, given the same seed value.
+
+**Test Data Creation**
+
+**Reading and Sampling**: The script reads the large training dataset using fread from data.table. Then randomly selects a subset of rows based on the predetermined test data size mentioned above.
+
+**Data Subsetting**: The sampled rows are extracted to form the test dataset.
+
+**Label Integration**
+
+**Join Operation**: Using dplyr, a left join is performed between the test dataset and the labels dataset. This merge is based on customer_ID, adding relevant outcome information to each row of the test dataset.
+
+**Output Generation**
+The script writes the test dataset, now appended with labels, to a CSV file. This file serves as the output, ready for use in further testing or model validation processes.
+
 
 
 
