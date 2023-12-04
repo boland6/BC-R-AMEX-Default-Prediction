@@ -18,11 +18,25 @@ calculate_NA_stats <- function(data) {
   
   stats$Percent_NA <- round((stats$Num_NA / total_rows) * 100,4)
   
+  # Set column type
+  stats$Column_Type <- ifelse(names(data) %in% cate_columns, 'Categorical',
+                              ifelse(names(data) %in% date_columns, 'Date',
+                                     ifelse(names(data) %in% id_column, 'ID',
+                                            ifelse(names(data) %in% outcome_column, 'Outcome', 'Other'))))
+  
   # Set row names as column names from the original data
   row.names(stats) <- names(data)
   
   return(stats)
 }
+
+########################################################################################################
+#################################Assign Column Type#####################################################
+cate_columns <- c('B_30', 'B_38', 'D_114', 'D_116', 'D_117', 'D_120', 'D_126', 'D_63', 'D_64', 'D_66', 'D_68')
+date_columns <- c('S_2')
+id_column <- c('customer_ID')
+outcome_column <-c('target')
+
 ########################################################################################################
 #################################Reading in data########################################################
 
@@ -81,7 +95,13 @@ df[order(customer_ID, S_2), n_num_obs := seq_len(.N), by = customer_ID]
   
   
 ########################################################################################################
-#################################Examining NA Values#############################################  
+#################################Examining NA Values####################################################
   # Calculate stats
   column_stats <- calculate_NA_stats(df_2)
+        
+        
+########################################################################################################
+#################################Filter dataset to only latest####################################################
+
+        
   
