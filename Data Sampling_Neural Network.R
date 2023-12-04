@@ -1,5 +1,5 @@
 #Setting working directory
-setwd("~/BC-R-AMEX-Default-Prediction")
+setwd("~/home/workspaces/mba/MachineLearning_BZAN8067/Final_Project/BC-R-AMEX-Default-Prediction")
 
 
 ############################################################################################
@@ -100,7 +100,7 @@ df_2 <-dummy_cols(df, select_columns = cate_columns,
 #partition <- sample(c("train","test"), size = nrow(df_2), replace = TRUE, prob = c(0.8,0.2))
 #df_3 <- mutate(df_2, partition)
 
-set.seed(23) # for reproducibility
+set.seed(1) # for reproducibility
 
 # Calculate the number of rows that will be in the training set
 training_size <- floor(0.80 * nrow(df_2))
@@ -130,55 +130,57 @@ df_test <-filter(df_3,partition == "test") %>% select (-'partition')
 ################################################################################################
 ################################################################################################
 
-#Set the seed for the first model to ensure consistent results.
-set.seed(1) #base R
-#Create a Neural Network with 3 hidden nodes.
-# maxit and MaxNWts are needed to be defined because the default values are too low for a dataset this large
-ml_nn3 <- nnet(target~., data = df_train, 
-               size=3, linout=T, decay=1, maxit=1000, MaxNWts=2000) #nnet
-
-
-#MODEL TUNING
-
-#Evaluate fit of the model with 3 hidden layer nodes 
-#Get predictions from the model for the training data.
-d_pred_nn3_train <- predict(ml_nn3, df_train)  #base R
-#Calculate the RMSE for the predicted vs. actual values in training data.
-RMSE(d_pred_nn3_train, df_train$target) #caret
 
 #AUTOMATED MODEL TRAINING AND TUNING
-#Use a loop to figure out the best number of hidden nodes based on RMSE
-#The loop will automatically store the number of hidden nodes and RMSE to a new data frame.
+#Use a loop to determine best number of nodes based on % correct
+#Store the number of nodes and % correct in a new data frame.
 #Create an empty data frame to store results from loop.
-d_nn_output = data.frame() #base R
+d_nn_output = data.frame()
 
 #Run loop for a neural network with the number of hidden nodes ranging from 2 to 19
-for (num in 1:6) {
+for (num in 2:10) {
   
   #Set the seed for the first model to ensure consistent results.
   set.seed(1) #base R
   
   #Create a Neural Network with num hidden nodes.
-  # maxit and MaxNWts are needed to be defined because the default values are too low for a dataset this large
   ml_nn <- nnet(target~., data = df_train, 
-                size = num, linout=T, decay=1, maxit=1000, MaxNWts=10000) #nnet
+                size= num,linout=F,decay=0.05,MaxNWts=10000) #nnet
   
   #Evaluate fit of the model with num hidden layer nodes 
-  #Get predictions from the model for the training data.
-  d_pred_nn_train <- predict(ml_nn, df_train)  #base R
-  #Calculate the RMSE for the predicted vs. actual values in training data.
-  RMSE_train <- RMSE(d_pred_nn_train, df_train$target) #caret
+  #Create vector of predictions
+  #round(): round estimated probabilities to get 0 or 1.
+  v_nn_train_preds <- predict(ml_nn, df_train) %>% round() #dplyr
+  #Compute/display the Percentage Correct in training data to evaluate fit.
+  percentage_correct <- mean(~(target == v_nn_train_preds), data=df_train) #mosaic
   
   #Create output to add results to data frame
-  v_output = c(num, RMSE_train)#base
+  v_output = c(num, percentage_correct)#base
   #Add results to data frame
   d_nn_output = rbind(d_nn_output, v_output)#base
 }    
 
 #Name the columns to make the data frame more legible when viewing
-colnames(d_nn_output) <- c("Number of Hidden Nodes", "RMSE_train")#base
+colnames(d_nn_output) <- c("Number of Hidden Nodes", "Percentage Correct")#base
 
 #View data frame to see which number of n performed best for the training set
+
+#The model with the 9 hidden nodes performed best, so store that model
+#Set the seed to ensure consistent results.
+set.seed(1) #base R
+ml_nn9 <- nnet(target~., data = df_train, 
+                size=9,linout=F,decay=0.05,MaxNWts=10000) #nnet
+
+#Create vector of predictions
+v_pred_nn9_train_preds <- predict(ml_nn9, df_train) %>% round() #dplyr
+#Compute/display the Percentage Correct in training data to evaluate fit.
+mean(~(target == v_pred_nn9_train_preds), data=df_train) #mosaic
+#Create/display Classification Tables for the training data.
+#Classification Table of raw counts.
+tally(target ~ v_pred_nn9_train_preds, data=df_train) %>% addmargins() #mosaic
+#Classification Table of percentages of training data.
+tally(target ~ v_pred_nn9_train_preds, data=df_train) %>% 
+  prop.table(margin=1) %>% round(2) #mosaic      
 
 
 ################################################################################################
@@ -187,14 +189,19 @@ colnames(d_nn_output) <- c("Number of Hidden Nodes", "RMSE_train")#base
 ################################################################################################
 ################################################################################################
 
-#The model with the 6 hidden nodes performed best, so store that model
-#Set the seed to ensure consistent results.
-set.seed(1) #base R
-ml_nn6 <- nnet(target~., data = df_train, 
-                size = 6, linout=T, decay=1, maxit=1000, MaxNWts=10000) #nnet
+#MODEL TESTING
 
-#Evaluate accuracy of 14-node model
-#Get predictions from the model for the test data.
-d_pred_nn6_test <- predict(ml_nn6, df_test)  #base R
-#Calculate the RMSE for the predicted vs. actual values in test data.
-RMSE(d_pred_nn6_test, df_test$target) #caret
+#Evaluate accuracy of 9-node model
+#Create vector of predictions in test data
+#round(): round estimated probabilities to get 0 or 1.
+v_nn9_test_preds <- predict(ml_nn9, df_test) %>% round() #dplyr
+#Compute/display the Percentage Correct in the test data to evaluate accuracy.
+mean(~(target == v_nn9_test_preds), data=df_test) #mosaic
+#Create/display Classification Tables for the test data.
+#Classification Table of raw counts.
+tally(target ~ v_nn9_test_preds, data=df_test) %>% addmargins() #mosaic
+#Classification Table of percentages of test data.
+tally(target ~ v_nn9_test_preds, data=df_test) %>% 
+  prop.table(margin=1) %>% round(2) #mosaic     
+
+

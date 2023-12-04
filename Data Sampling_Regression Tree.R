@@ -128,47 +128,55 @@ df_test <-filter(df_3,partition == "test") %>% select (-'partition')
 ################################################################################################
 
 
+#AUTOMATED TRAINING AND TUNING
+
+#Create dataframe to store results
+d_tree_output <- data.frame()
+
+#Run loop for tree with a range of complexity parameters from 0.02 to 0.2
+for (num in seq(0.02,0.2,0.02)) {
+  
+  #Build tree model with different complexity parameters
+  ml_tree <- rpart(target ~., data=df_train, 
+                   method="class", cp= num)
+  
+  #Evaluate Fit of the tree with cp = num
+  #Create vector of predictions
+  v_tree_train_preds <- predict(ml_tree, df_train,type="class") #dplyr
+  #Compute/display the Percentage Correct in training data to evaluate fit.
+  percentage_correct <- mean(~(target == v_tree_train_preds), data=df_train) #mosaic
+  
+  #Create output to add results to data frame
+  v_output = c(num, percentage_correct)#base
+  #Add results to data frame
+  d_tree_output = rbind(d_tree_output, v_output)#base
+}    
+
+#Name the columns to make the data frame more legible when viewing
+colnames(d_tree_output) <- c("cp", "Training %Correct")#base
+
+#View data frame to see which complexity parameter performed best for both training and test
+
 #MODEL TRAINING
-#Create a regression tree to predict Count using cp = 0.03
-tree03 <- rpart(target ~., data = df_train, method = "anova", cp = 0.03)
+#Create a regression tree to predict Count using cp = 0.02
+tree02 <- rpart(target ~., data = df_train, method = "class", cp = 0.02)
 # ~. means any and all rows  
 # anova means classification, not prediction
-rpart.plot(tree03, roundint = FALSE, nn = TRUE, extra = 1)
+rpart.plot(tree02, roundint = FALSE, nn = TRUE, extra = 4)
 
 
 #MODEL TUNING
 #Make predictions of training data with tree03
-pred_tree03_train <- predict(tree03, df_train)
-#Calculate root mean-squared error (RMSE) of tree03 in training data
-RMSE(pred_tree03_train, df_train$target)
+pred_tree02_train <- predict(tree02, df_train,type="class")
 
-
-#AUTOMATED TRAINING AND TUNING
-
-#Create dataframe to store results
-tree_results <- data.frame()
-
-#run loop to train models with different cp
-for (num in seq(0.0025, 0.0500, 0.0025)) {
-  
-  #Create a regression tree to predict Count using cp = num
-  tree <- rpart(target ~., data = df_train, method = "anova", cp = num)
-  
-  #Make predictions of training data with tree
-  pred_tree_train <- predict(tree, df_train)
-  #Calculate root mean-squared error (RMSE) of tree03 in training data
-  tree_rmse <- RMSE(pred_tree_train, df_train$target)
-  
-  #Create vector of tree output
-  tree_output <- c(num, tree_rmse);
-  #Add results to data frame, rbind is what's used to add to the data frame
-  tree_results <- rbind(tree_results, tree_output)
-  
-}
-
-#Add descriptive headers to results of the dataframe
-colnames(tree_results) <- c("cp", "RMSE")
-
+#Compute/display the Percentage Correct in training data to evaluate fit.
+mean(~(target == pred_tree02_train), data=df_train) #mosaic
+#Create/display Classification Tables for the training data.
+#Classification Table of raw counts.
+tally(target ~ pred_tree02_train, data=df_train) %>% addmargins() #mosaic
+#Classification Table of percentages of training data.
+tally(target ~ pred_tree02_train, data=df_train) %>% 
+  prop.table(margin=1) %>% round(2) #mosaic
 
 
 ################################################################################################
@@ -178,10 +186,16 @@ colnames(tree_results) <- c("cp", "RMSE")
 ################################################################################################
 
 #MODEL TESTING
-#Make predictions of test data with tree03
-pred_tree03_test <- predict(tree03, df_test)
-#Calculate root mean-squared error (RMSE) of tree03 in test data
-RMSE(pred_tree03_test, df_test$target)
 
-test_tree03 <- rpart(target ~., data = df_test, method = "anova", cp = 0.03)
-rpart.plot(test_tree03, roundint = FALSE, nn = TRUE, extra = 1)
+#Evaluate accuracy of the cp=0.02 model
+#Create vector of predictions in test data
+v_tree02_test_preds <- predict(tree02, df_test,type="class") #dplyr
+#Compute/display the Percentage Correct in test data to evaluate accuracy.
+mean(~(target == v_tree02_test_preds), data=df_test) #mosaic
+#Create/display Classification Tables for test data.
+#Classification Table of raw counts.
+tally(target ~ v_tree02_test_preds, data=df_test) %>% addmargins() #mosaic
+#Classification Table of percentages of test data.
+tally(target ~ v_tree02_test_preds, data=df_test) %>% 
+  prop.table(margin=1) %>% round(2) #mosaic
+
