@@ -21,7 +21,8 @@ library(mosaic) # #Functions for common statistical tasks.
 #Load the master data file.
 #Ingesting data from AMEX
 #This contains the labels for the training data for the entire data set
-df <- read.csv("train.csv")
+d_AMEX_train <-
+d_AMEX_test <-
 ############################################################################################
 
 
