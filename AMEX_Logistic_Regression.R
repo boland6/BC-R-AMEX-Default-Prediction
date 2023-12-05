@@ -14,6 +14,8 @@ library(data.table)
 library(mosaic) # #Functions for common statistical tasks.
 library(stats)
 library(openxlsx)
+library(ggplot2)
+library(caret)
 
 ############################################################################################
 
@@ -144,3 +146,4 @@ writeData(wb_test, "Classi Table Percentages", classification_table_percentages_
 
 # Save the workbook
 saveWorkbook(wb_test, "log_reg_accuracy_test.xlsx", overwrite = TRUE)
+
